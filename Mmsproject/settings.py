@@ -123,16 +123,15 @@ CORS_ALLOW_ALL_ORIGINS = True
 # DEFAULT_FROM_EMAIL = 'support@mediamaticstudio.com'
 
 
-EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+EMAIL_BACKEND = 'ContactUs.email_backends.UnverifiedEmailBackend'
 
-EMAIL_HOST = 'mail.mediamaticstudio.com'
+EMAIL_HOST = 'smtp.gmail.com'
 EMAIL_PORT = 587
 EMAIL_USE_TLS = True
 EMAIL_USE_SSL = False
 
-EMAIL_HOST_USER = 'support@mediamaticstudio.com'
-EMAIL_HOST_PASSWORD = 'Mms_60688@'
-
+EMAIL_HOST_USER = 'contact.mediamaticstudio@gmail.com'
+EMAIL_HOST_PASSWORD = 'xgpghcgenbndedvk'
 DEFAULT_FROM_EMAIL = EMAIL_HOST_USER
 
 

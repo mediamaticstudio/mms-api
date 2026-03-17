@@ -40,8 +40,9 @@ class ContactMailView(APIView):
         admin_mail = EmailMessage(
             subject=admin_subject,
             body=admin_body,
-            from_email='support@mediamaticstudio.com',
+            from_email=settings.DEFAULT_FROM_EMAIL,
             to=['support@mediamaticstudio.com'],
+            reply_to=[email]
         )
         admin_mail.send(fail_silently=False)
 
@@ -66,7 +67,7 @@ class ContactMailView(APIView):
         user_mail = EmailMessage(
             subject=user_subject,
             body=user_body,
-            from_email='support@mediamaticstudio.com',
+            from_email=f"MediaMatic Studio Support <{settings.DEFAULT_FROM_EMAIL}>",
             to=[email],
         )
         user_mail.send(fail_silently=False)
@@ -110,32 +111,33 @@ class GetQuoteMailView(APIView):
         # -------------------------------
         admin_subject = f"New Quote Request from {full_name}"
         admin_body = f"""
-New Quote Request Received
+        New Quote Request Received
 
-Client Information:
--------------------
-Name: {full_name}
-Email: {email}
-Phone: {full_phone}
-Country Code: {country_code}
+        Client Information:
+        -------------------
+        Name: {full_name}
+        Email: {email}
+        Phone: {full_phone}
+        Country Code: {country_code}
 
-Project Details:
-----------------
-Service Requested: {selected_service}
-Preferred Start Date: {start_date if start_date else 'Not specified'}
+        Project Details:
+        ----------------
+        Service Requested: {selected_service}
+        Preferred Start Date: {start_date if start_date else 'Not specified'}
 
-Message:
-{message}
+        Message:
+        {message}
 
----
-This is an automated notification from MediaMatic Studio Quote Form.
+        ---
+        This is an automated notification from MediaMatic Studio Quote Form.
             """
 
         admin_mail = EmailMessage(
             subject=admin_subject,
             body=admin_body,
-            from_email='support@mediamaticstudio.com',
+            from_email=settings.DEFAULT_FROM_EMAIL,
             to=['support@mediamaticstudio.com'],
+            reply_to=[email]
         )
         admin_mail.send(fail_silently=False)
 
@@ -144,21 +146,112 @@ This is an automated notification from MediaMatic Studio Quote Form.
         # -------------------------------
         user_subject = "Thank you for requesting a quote - MediaMatic Studio"
         user_body = f"""
+            Hi {first_name},
+
+            Thank you for your interest in our services!
+
+            We have received your quote request for "{selected_service}" and our team is reviewing your requirements.
+
+            Project Summary:
+            • Service: {selected_service}
+            • Preferred Start Date: {start_date if start_date else 'Not specified'}
+
+            One of our representatives will get back to you within 24-48 hours with a detailed quote and next steps.
+
+            If you have any urgent questions, please feel free to reach out to us at:
+            📞 +91 96295 93615
+            📧 support@mediamaticstudio.com
+
+            Best regards,
+            MediaMatic Studio Team
+            www.mediamaticstudio.com
+            """
+
+        user_mail = EmailMessage(
+            subject=user_subject,
+            body=user_body,
+            from_email=f"MediaMatic Studio <{settings.DEFAULT_FROM_EMAIL}>",
+            to=[email],
+        )
+        user_mail.send(fail_silently=False)
+
+        return Response(
+            {"status": "success", "message": "Quote request sent successfully"},
+            status=status.HTTP_200_OK
+        )
+
+
+class MarketingAuditView(APIView):
+    """
+    POST → Send marketing audit form details to company email
+    """
+    def post(self, request):
+        first_name = request.data.get("firstName")
+        last_name = request.data.get("lastName")
+        email = request.data.get("email")
+        phone = request.data.get("phone")
+        company_name = request.data.get("companyName")
+        website = request.data.get("website")
+        message = request.data.get("message")
+        source = request.data.get("source", "Digital Marketing Audit")
+        audit_type = request.data.get("type", "Marketing Audit")
+
+        if not first_name or not email or not website:
+            return Response(
+                {"status": "error", "message": "Required fields: First Name, Email, Website"},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        full_name = f"{first_name} {last_name}".strip()
+
+        # -------------------------------
+        # 1 Email to Admin
+        # -------------------------------
+        admin_subject = f"New {audit_type} Request from {full_name}"
+        admin_body = f"""
+New Marketing Audit Request Received
+
+Client Information:
+-------------------
+Name: {full_name}
+Email: {email}
+Phone: {phone}
+Company: {company_name}
+Website: {website}
+
+Details:
+--------
+Source: {source}
+Type: {audit_type}
+
+Message/What can we do for you?:
+{message}
+
+---
+This is an automated notification from MediaMatic Studio Marketing Audit Form.
+            """
+
+        admin_mail = EmailMessage(
+            subject=admin_subject,
+            body=admin_body,
+            from_email=settings.DEFAULT_FROM_EMAIL,
+            to=['support@mediamaticstudio.com'],
+            reply_to=[email]
+        )
+        admin_mail.send(fail_silently=False)
+
+        # -------------------------------
+        # 2 Auto-reply Email to User
+        # -------------------------------
+        user_subject = f"Thank you for requesting a {audit_type} - MediaMatic Studio"
+        user_body = f"""
 Hi {first_name},
 
-Thank you for your interest in our services!
+Thank you for requesting a free Digital Marketing Audit!
 
-We have received your quote request for "{selected_service}" and our team is reviewing your requirements.
+We have received your request for {website} and our team will start analyzing your online presence shortly.
 
-Project Summary:
-• Service: {selected_service}
-• Preferred Start Date: {start_date if start_date else 'Not specified'}
-
-One of our representatives will get back to you within 24-48 hours with a detailed quote and next steps.
-
-If you have any urgent questions, please feel free to reach out to us at:
-📞 +91 96295 93615
-📧 support@mediamaticstudio.com
+One of our experts will get back to you within 24-48 hours with a detailed report and recommendations.
 
 Best regards,
 MediaMatic Studio Team
@@ -168,12 +261,105 @@ www.mediamaticstudio.com
         user_mail = EmailMessage(
             subject=user_subject,
             body=user_body,
-            from_email='support@mediamaticstudio.com',
+            from_email=f"MediaMatic Studio <{settings.DEFAULT_FROM_EMAIL}>",
             to=[email],
         )
         user_mail.send(fail_silently=False)
 
         return Response(
-            {"status": "success", "message": "Quote request sent successfully"},
+            {"status": "success", "message": "Audit request sent successfully"},
+            status=status.HTTP_200_OK
+        )
+
+
+class PodcastBookingView(APIView):
+    """
+    POST → Send podcast booking details to company email
+    """
+    def post(self, request):
+        first_name = request.data.get("firstName")
+        last_name = request.data.get("lastName")
+        email = request.data.get("email")
+        phone = request.data.get("phone")
+        date = request.data.get("date")
+        slot_time = request.data.get("slotTime")
+        message = request.data.get("message")
+        booking_type = request.data.get("type", "Podcast Studio Session")
+        source = request.data.get("source", "Podcast Page")
+
+        if not first_name or not email or not date or not slot_time:
+            return Response(
+                {"status": "error", "message": "Required fields: First Name, Email, Date, Time"},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        full_name = f"{first_name} {last_name}".strip()
+
+        # -------------------------------
+        # 1 Email to Admin
+        # -------------------------------
+        admin_subject = f"New Podcast Booking: {full_name} - {date}"
+        admin_body = f"""
+New Podcast Studio Session Booking Received
+
+Client Information:
+-------------------
+Name: {full_name}
+Email: {email}
+Phone: {phone}
+
+Booking Details:
+----------------
+Date: {date}
+Time Slot: {slot_time}
+Type: {booking_type}
+Source: {source}
+
+Message:
+{message}
+
+---
+This is an automated notification from MediaMatic Studio Podcast Booking Form.
+            """
+
+        admin_mail = EmailMessage(
+            subject=admin_subject,
+            body=admin_body,
+            from_email=settings.DEFAULT_FROM_EMAIL,
+            to=['support@mediamaticstudio.com'],
+            reply_to=[email]
+        )
+        admin_mail.send(fail_silently=False)
+
+        # -------------------------------
+        # 2 Auto-reply Email to User
+        # -------------------------------
+        user_subject = "Podcast Studio Booking Request - MediaMatic Studio"
+        user_body = f"""
+Hi {first_name},
+
+Thank you for your interest in booking our Podcast Studio!
+
+We have received your request for:
+📅 Date: {date}
+🕒 Time Slot: {slot_time}
+
+Our team is checking the studio's availability for your requested time. We will get back to you within 24 hours to confirm your booking and provide next steps.
+
+Best regards,
+MediaMatic Studio Team
+www.mediamaticstudio.com
+            """
+
+        user_mail = EmailMessage(
+            subject=user_subject,
+            body=user_body,
+            from_email=f"MediaMatic Studio <{settings.DEFAULT_FROM_EMAIL}>",
+            to=[email],
+        )
+        user_mail.send(fail_silently=False)
+
+        return Response(
+            {"status": "success", "message": "Booking request sent successfully"},
             status=status.HTTP_200_OK
         )
